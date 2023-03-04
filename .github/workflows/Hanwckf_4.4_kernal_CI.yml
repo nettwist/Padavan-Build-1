@@ -28,10 +28,6 @@ jobs:
     strategy:
       matrix:
         include:
-          - build_variant: "mt7621"
-            targets: ""
-          - build_variant: "mt7621-usb-1"
-            targets: ""
           - build_variant: "mt7621-usb-2"
             targets: "MI-R3P"
     steps:
