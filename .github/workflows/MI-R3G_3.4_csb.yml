@@ -2,6 +2,8 @@
 name : MI-R3G_3.4_csb
 
 on: 
+  repository_dispatch:
+  workflow_dispatch:
   release:
     types: [published]
   push:
