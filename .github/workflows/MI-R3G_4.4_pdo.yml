@@ -96,5 +96,5 @@ jobs:
       uses: actions/upload-artifact@master
       if: always()
       with:
-        name : MI-R3G_4.4
+        name : MI-R3G_4.4_pdo
         path: /opt/images
