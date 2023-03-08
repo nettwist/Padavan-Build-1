@@ -1,5 +1,5 @@
 #Modify TNAME: K2P in K2P is the model you need to compile, note that the name should be the same as the name in the configs/templates/ directory
-name : MI-R3G_3.4_csb_all
+name : MI-R3G_3.4_csb_kvr
 
 on: 
   repository_dispatch:
@@ -53,7 +53,7 @@ jobs:
         ################################################################################################
         #If you want to modify the default IP: Please change the following 192.168.xx to the ip you want to set and delete the previous comment "#"
         ################################################################################################
-        sed -i 's/192.168.123.1/192.168.1.1/g' user/shared/defaults.h
+        sed -i 's/192.168.1.1/192.168.x.x/g' user/shared/defaults.h
         if [ ! -f configs/templates/$TNAME.config ] ; then
         echo "configs/templates/$TNAME.config not found "
         exit 1
@@ -94,7 +94,7 @@ jobs:
         echo "CONFIG_FIRMWARE_INCLUDE_ZEROTIER=n" >> .config #zerotier ~1.3M
         echo "CONFIG_FIRMWARE_INCLUDE_ALIDDNS=n" >> .config #aliddns
         echo "CONFIG_FIRMWARE_INCLUDE_WIREGUARD=y" >> .config #wireguard ~10k
-        echo "CONFIG_FIRMWARE_INCLUDE_VLMCSD=y" >> .config #KMS激活
+        echo "CONFIG_FIRMWARE_INCLUDE_VLMCSD=n" >> .config #KMS激活
         else
         echo "CONFIG_FIRMWARE_INCLUDE_MENTOHUST=n" >> .config #MENTOHUST
         echo "CONFIG_FIRMWARE_INCLUDE_SCUTCLIENT=n" >> .config #SCUTCLIENT
@@ -120,7 +120,7 @@ jobs:
         echo "CONFIG_FIRMWARE_INCLUDE_WYYBIN=n" >> .config #Netease Cloud Unlock GO version execution file (more than 4M) Note that the firmware is too large, it will be downloaded automatically if it is not integrated
         echo "CONFIG_FIRMWARE_INCLUDE_ZEROTIER=n" >> .config #zerotier ~1.3M
         echo "CONFIG_FIRMWARE_INCLUDE_WIREGUARD=y" >> .config #wireguard ~10k
-        echo "CONFIG_FIRMWARE_INCLUDE_VLMCSD=y" >> .config #KMS激活
+        echo "CONFIG_FIRMWARE_INCLUDE_VLMCSD=n" >> .config #KMS激活
         fi
         ##########Flow Control QOS#########
         echo "CONFIG_FIRMWARE_INCLUDE_SQM=y" >> .config #SQM QOS#CPU超频
@@ -139,5 +139,5 @@ jobs:
       uses: actions/upload-artifact@master
       if: always()
       with:
-        name : MI-R3G_3.4_csb_all
+        name : MI-R3G_3.4_csb_kvr
         path: /opt/images
