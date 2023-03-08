@@ -1,5 +1,5 @@
 #Modify TNAME: K2P in K2P is the model you need to compile, note that the name should be the same as the name in the configs/templates/ directory
-name : MI-R3G_3.4_csb_keke
+name : MI-R3G_3.4_csb_all
 
 on: 
   repository_dispatch:
@@ -39,7 +39,7 @@ jobs:
         if [ $KERNEL = "4.4" ] ; then
         git clone --depth=1 https://github.com/MeIsReallyBa/padavan-4.4.git /opt/rt-n56u
         else
-        git clone --depth=1 https://github.com/keke1023/Padavan.git /opt/rt-n56u
+        git clone --depth=1 https://github.com/chongshengB/rt-n56u.git /opt/rt-n56u
         fi
         cd /opt/rt-n56u/toolchain-mipsel
         sh dl_toolchain.sh
@@ -50,6 +50,10 @@ jobs:
         KERNEL: 3.4
       run: |
         cd /opt/rt-n56u/trunk
+        ################################################################################################
+        #If you want to modify the default IP: Please change the following 192.168.xx to the ip you want to set and delete the previous comment "#"
+        ################################################################################################
+        sed -i 's/192.168.2.1/192.168.1.1/g' user/shared/defaults.h
         if [ ! -f configs/templates/$TNAME.config ] ; then
         echo "configs/templates/$TNAME.config not found "
         exit 1
@@ -135,5 +139,5 @@ jobs:
       uses: actions/upload-artifact@master
       if: always()
       with:
-        name : MI-R3G_3.4_csb_keke
+        name : MI-R3G_3.4_csb_all
         path: /opt/images
