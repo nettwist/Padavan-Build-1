@@ -53,7 +53,7 @@ jobs:
         ################################################################################################
         #If you want to modify the default IP: Please change the following 192.168.xx to the ip you want to set and delete the previous comment "#"
         ################################################################################################
-        sed -i 's/192.168.1.1/192.168.1.1/g' user/shared/defaults.h
+        sed -i 's/192.168.2.1/192.168.1.1/g' user/shared/defaults.h
         if [ ! -f configs/templates/$TNAME.config ] ; then
         echo "configs/templates/$TNAME.config not found "
         exit 1
