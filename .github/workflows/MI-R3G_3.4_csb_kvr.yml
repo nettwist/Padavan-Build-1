@@ -53,7 +53,7 @@ jobs:
         ################################################################################################
         #If you want to modify the default IP: Please change the following 192.168.xx to the ip you want to set and delete the previous comment "#"
         ################################################################################################
-        sed -i 's/192.168.1.1/192.168.x.x/g' user/shared/defaults.h
+        sed -i 's/192.168.2.1/192.168.1.1/g' user/shared/defaults.h
         if [ ! -f configs/templates/$TNAME.config ] ; then
         echo "configs/templates/$TNAME.config not found "
         exit 1
@@ -125,7 +125,7 @@ jobs:
         ##########Flow Control QOS#########
         echo "CONFIG_FIRMWARE_INCLUDE_SQM=y" >> .config #SQM QOS#CPU超频
         echo "CONFIG_FIRMWARE_INCLUDE_OC=y" >> .config #CPU overclocking switch
-        echo 'CONFIG_FIRMWARE_MT7621_OC="0x312"' >> .config #Fill in the hex of the corresponding frequency here: 1000Mhz=0x312 1100Mhz=0x362 1120Mhz=0x372 1200Mhz=0x3B2
+        echo 'CONFIG_FIRMWARE_MT7621_OC="0xx362"' >> .config #Fill in the hex of the corresponding frequency here: 1000Mhz=0x312 1100Mhz=0x362 1120Mhz=0x372 1200Mhz=0x3B2
         #########################################################################################
         #Custom add other functions, please refer to the config file in the source code configs/templates/ directory. Just add it in the above format
         #The format is as follows:
