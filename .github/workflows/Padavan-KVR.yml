@@ -1,12 +1,41 @@
-name: Build MI-R3G kvr from vb1980 repo
+name: Build Misc Target from vb1980 kvr repo
 
 on:
   workflow_dispatch:
     inputs:
+      targetname:
+        type: choice
+        description: 'target to compile'
+        options:
+        - B70
+        - DIR-878
+        - DIR-882
+        - DSBox-DSR1
+        - JCG-AC860M
+        - JCG-AC876M
+        - JCG-Q20
+        - JCG-Y2
+        - MI-MINI
+        - MI-R3G
+        - MI-R4A
+        - MSG1500-7615
+        - MSG1500
+        - NEWIFI3
+        - R6220
+        - RT-AC85P
+        - XY-C1
+        - RS1200P
+        - TIMECLOUD
+        - WR330
+        default: 'WR330'
+      plugins:
+        description: 'json format string of include configs'
+        required: true
+        default: '{"vpnsvr":"y","vpncli":"y","vpncmd":"n","ss":"y","v2ray":"n","xray":"y","trojan":"y","ssobfs":"y","dnsforwarder":"n","adbyby":"n","adguardhome":"n","smartdns":"n","aliddns":"y","zerotier":"n","ddnsto":"n","wireguard":"n","frpc":"y","aldrive":"y","mentohust":"n","scutclient":"n","njitclient":"n","minieap":"n","dogcom":"n"}'
       firmwarever:
         description: 'firmware''s version'
         required: true
-        default: '20201015'
+        default: '20220626'
       busyboxver:
         type: choice
         description: 'busybox''s version'
@@ -14,6 +43,10 @@ on:
         - 1.24.x
         - 1.34.1
         default: '1.24.x'
+      formlogin:
+        type: boolean
+        description: 'whether enable formlogin instead of dialoglogin'
+        default: 'false'
       ssp:
         type: boolean
         description: 'whether to apply the patch for download ssp bin from local or remote url'
@@ -27,7 +60,6 @@ env:
   TOOLCHAIN_URL: https://github.com/hanwckf/padavan-toolchain/releases/download/v1.1/mipsel-linux-uclibc.tar.xz
   WORK_PATH: /opt/rt-n56u
   TIME_ZONE: Asia/Shanghai
-  TARGET_NAME: MI-R3G
   FIRMWARE_DATEPREFIX: $(date +"%Y%m%d")
   FIRMWARE_AUTHOR: vb1980
   FIRMWARE_PATH: /opt/firmwares
@@ -66,6 +98,15 @@ jobs:
         sed -i "s/SRC_NAME=busybox.*/SRC_NAME=busybox-${{ github.event.inputs.busyboxver }}/g" ./Makefile
         cd $WORK_PATH/trunk
         sed -i "s/busybox_id=.*/busybox_id=\"${{ github.event.inputs.busyboxver }}\"/g" ./build_firmware_modify
+    - name: Enable formlogin
+      if: github.event.inputs.formlogin == 'true'
+      run: |
+        cp -f formlogin/httpd.c $WORK_PATH/trunk/user/httpd
+        cp -f formlogin/favicon.png $WORK_PATH/trunk/user/www/n56u_ribbon_fixed/images
+        cp -f formlogin/Login.asp $WORK_PATH/trunk/user/www/n56u_ribbon_fixed
+        cp -f formlogin/Logout.asp $WORK_PATH/trunk/user/www/n56u_ribbon_fixed
+        mkdir -p $WORK_PATH/trunk/user/www/n56u_ribbon_fixed/login
+        cp -f formlogin/login.css $WORK_PATH/trunk/user/www/n56u_ribbon_fixed/login
     - name: Recovery SSP bin files download from remote
       if: github.event.inputs.ssp == 'true'
       run: |
@@ -74,8 +115,8 @@ jobs:
         #cp -f ssp/variables.c $WORK_PATH//trunk/user/httpd
         cp -f ssp/Shadowsocks.asp $WORK_PATH/trunk/user/www/n56u_ribbon_fixed
         cd $WORK_PATH/trunk/user/shared
-        sed -i "s#https://cdn.jsdelivr.net/gh/Padavan_CI/ssp/trojan#https://cdn.jsdelivr.net/gh/${{ github.repository_owner }}/Padavan_CI/ssp/trojan#g" ./defaults.c
-        sed -i "s#https://cdn.jsdelivr.net/gh/Padavan_CI/ssp/v2ray#https://cdn.jsdelivr.net/gh/${{ github.repository_owner }}/Padavan_CI/ssp/v2ray#g" ./defaults.c
+        #sed -i "s#https://cdn.jsdelivr.net/gh/Padavan_CI/ssp/trojan#https://cdn.jsdelivr.net/gh/${{ github.repository_owner }}/Padavan_CI/ssp/trojan#g" ./defaults.c
+        #sed -i "s#https://cdn.jsdelivr.net/gh/Padavan_CI/ssp/v2ray#https://cdn.jsdelivr.net/gh/${{ github.repository_owner }}/Padavan_CI/ssp/v2ray#g" ./defaults.c
     - name: Update latest adg
       run: |
         cp -f adg/adguardhome.sh $WORK_PATH/trunk/user/adguardhome
@@ -84,14 +125,39 @@ jobs:
         cp -f adg/Advanced_adguardhome.asp $WORK_PATH/trunk/user/www/n56u_ribbon_fixed
         #cd $WORK_PATH/trunk/user/adguardhome
         #sed -i "s#https://cdn.jsdelivr.net/gh/chongshengB/rt-n56u/trunk/user/adguardhome/AdGuardHome#https://cdn.jsdelivr.net/gh/${{ github.repository_owner }}/Padavan_CI/adg/AdGuardHome#g" ./adguardhome.sh
+    - name: Parse json string of include plugins
+      run: |
+        echo "vpnsvr=${{fromJson(github.event.inputs.plugins).vpnsvr}}" >> $GITHUB_ENV
+        echo "vpncli=${{fromJson(github.event.inputs.plugins).vpncli}}" >> $GITHUB_ENV
+        echo "vpncmd=${{fromJson(github.event.inputs.plugins).vpncmd}}" >> $GITHUB_ENV
+        echo "ss=${{fromJson(github.event.inputs.plugins).ss}}" >> $GITHUB_ENV
+        echo "v2ray=${{fromJson(github.event.inputs.plugins).v2ray}}" >> $GITHUB_ENV
+        echo "xray=${{fromJson(github.event.inputs.plugins).xray}}" >> $GITHUB_ENV
+        echo "trojan=${{fromJson(github.event.inputs.plugins).trojan}}" >> $GITHUB_ENV
+        echo "ssobfs=${{fromJson(github.event.inputs.plugins).ssobfs}}" >> $GITHUB_ENV
+        echo "dnsforwarder=${{fromJson(github.event.inputs.plugins).dnsforwarder}}" >> $GITHUB_ENV
+        echo "adbyby=${{fromJson(github.event.inputs.plugins).adbyby}}" >> $GITHUB_ENV
+        echo "adguardhome=${{fromJson(github.event.inputs.plugins).adguardhome}}" >> $GITHUB_ENV
+        echo "smartdns=${{fromJson(github.event.inputs.plugins).smartdns}}" >> $GITHUB_ENV
+        echo "aliddns=${{fromJson(github.event.inputs.plugins).aliddns}}" >> $GITHUB_ENV
+        echo "zerotier=${{fromJson(github.event.inputs.plugins).zerotier}}" >> $GITHUB_ENV
+        echo "ddnsto=${{fromJson(github.event.inputs.plugins).ddnsto}}" >> $GITHUB_ENV
+        echo "wireguard=${{fromJson(github.event.inputs.plugins).wireguard}}" >> $GITHUB_ENV
+        echo "frpc=${{fromJson(github.event.inputs.plugins).frpc}}" >> $GITHUB_ENV
+        echo "aldrive=${{fromJson(github.event.inputs.plugins).aldrive}}" >> $GITHUB_ENV
+        echo "mentohust=${{fromJson(github.event.inputs.plugins).mentohust}}" >> $GITHUB_ENV
+        echo "scutclient=${{fromJson(github.event.inputs.plugins).scutclient}}" >> $GITHUB_ENV
+        echo "njitclient=${{fromJson(github.event.inputs.plugins).njitclient}}" >> $GITHUB_ENV
+        echo "minieap=${{fromJson(github.event.inputs.plugins).minieap}}" >> $GITHUB_ENV
+        echo "dogcom=${{fromJson(github.event.inputs.plugins).dogcom}}" >> $GITHUB_ENV
     - name: Custom config
       run: |
         cd $WORK_PATH/trunk
-        if [ ! -f configs/templates/$TARGET_NAME.config ] ; then
-        echo "configs/templates/${TARGET_NAME}.config not found"
+        if [ ! -f configs/templates/${{ github.event.inputs.targetname }}.config ] ; then
+        echo "configs/templates/${{ github.event.inputs.targetname }}.config not found"
         exit 1
         fi
-        cp -f configs/templates/$TARGET_NAME.config .config
+        cp -f configs/templates/${{ github.event.inputs.targetname }}.config .config
         sed -i 's/CONFIG_FIRMWARE_INCLUDE_OPENSSL_EXE=n/CONFIG_FIRMWARE_INCLUDE_OPENSSL_EXE=y/g' .config
         ################################################################################################
         #因不同型号配置功能不一样，所以先把配置项删除，如果你自己要添加其他的，也要写上删除这一条，切记！！！
@@ -130,15 +196,15 @@ jobs:
         ######################################################################
         #以下选项是定义你需要的功能（y=集成,n=忽略），重新写入到.config文件
         ######################################################################
-        echo "CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_SERVER=n" >> .config #SOFTETHERVPN
-        echo "CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_CLIENT=n" >> .config #SOFTETHERVPN
-        echo "CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_CMD=n" >> .config #SOFTETHERVPN
+        echo "CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_SERVER=${{env.vpnsvr}}" >> .config #SOFTETHERVPN
+        echo "CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_CLIENT=${{env.vpncli}}" >> .config #SOFTETHERVPN
+        echo "CONFIG_FIRMWARE_INCLUDE_SOFTETHERVPN_CMD=${{env.vpncmd}}" >> .config #SOFTETHERVPN
         #科学相关
-        echo "CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS=n" >> .config #SS plus+
-        echo "CONFIG_FIRMWARE_INCLUDE_V2RAY=n" >> .config #集成v2ray执行文件（3.8M左右)
-        echo "CONFIG_FIRMWARE_INCLUDE_XRAY=n" >> .config #集成xray执行文件(5.6M左右)，可以代替v2ray，注：如果闪存太小不够还是建议使用v2ray
-        echo "CONFIG_FIRMWARE_INCLUDE_TROJAN=n" >> .config #集成trojan执行文件(1.1M左右)
-        echo "CONFIG_FIRMWARE_INCLUDE_SSOBFS=n" >> .config # simple-obfs混淆插件
+        echo "CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS=${{env.ss}}" >> .config #SS plus+
+        echo "CONFIG_FIRMWARE_INCLUDE_V2RAY=${{env.v2ray}}" >> .config #集成v2ray执行文件（3.8M左右)
+        echo "CONFIG_FIRMWARE_INCLUDE_XRAY=${{env.xray}}" >> .config #集成xray执行文件(5.6M左右)，可以代替v2ray，注：如果闪存太小不够还是建议使用v2ray
+        echo "CONFIG_FIRMWARE_INCLUDE_TROJAN=${{env.trojan}}" >> .config #集成trojan执行文件(1.1M左右)
+        echo "CONFIG_FIRMWARE_INCLUDE_SSOBFS=${{env.ssobfs}}" >> .config # simple-obfs混淆插件
         echo "CONFIG_FIRMWARE_INCLUDE_SSSERVER=n" >> .config #SS server
         echo "CONFIG_FIRMWARE_INCLUDE_KUMASOCKS=n" >> .config #socks5
         #
@@ -146,27 +212,27 @@ jobs:
         echo "CONFIG_FIRMWARE_INCLUDE_MICROSOCKS=n" >> .config
         echo "CONFIG_FIRMWARE_INCLUDE_SRELAY=n" >> .config #可以不集成
         echo "CONFIG_FIRMWARE_INCLUDE_TUNSAFE=n" >> .config #TUNSAFE
-        echo "CONFIG_FIRMWARE_INCLUDE_DNSFORWARDER=n" >> .config #DNSFORWARDER
+        echo "CONFIG_FIRMWARE_INCLUDE_DNSFORWARDER=${{env.dnsforwarder}}" >> .config #DNSFORWARDER
         #
-        echo "CONFIG_FIRMWARE_INCLUDE_FRPC=n" >> .config #内网穿透FRPC
+        echo "CONFIG_FIRMWARE_INCLUDE_FRPC=${{env.frpc}}" >> .config #内网穿透FRPC
         echo "CONFIG_FIRMWARE_INCLUDE_FRPS=n" >> .config #内网穿透FRPS
         echo "CONFIG_FIRMWARE_INCLUDE_NPC=n" >> .config #删除配置项NPC
         #
-        echo "CONFIG_FIRMWARE_INCLUDE_ADBYBY=n" >> .config #adbyby plus+
+        echo "CONFIG_FIRMWARE_INCLUDE_ADBYBY=${{env.adbyby}}" >> .config #adbyby plus+
         echo "CONFIG_FIRMWARE_INCLUDE_KOOLPROXY=n" >> .config #KP广告过滤
         #
-        echo "CONFIG_FIRMWARE_INCLUDE_SMARTDNS=n" >> .config #smartdns
+        echo "CONFIG_FIRMWARE_INCLUDE_SMARTDNS=${{env.smartdns}}" >> .config #smartdns
         echo "CONFIG_FIRMWARE_INCLUDE_SMARTDNSBIN=n" >> .config #smartdns二进制文件
-        echo "CONFIG_FIRMWARE_INCLUDE_ADGUARDHOME=n" >> .config
+        echo "CONFIG_FIRMWARE_INCLUDE_ADGUARDHOME=${{env.adguardhome}}" >> .config
         #
-        echo "CONFIG_FIRMWARE_INCLUDE_ALIDDNS=n" >> .config #阿里DDNS
-        echo "CONFIG_FIRMWARE_INCLUDE_ZEROTIER=y" >> .config #zerotier ~1.3M
+        echo "CONFIG_FIRMWARE_INCLUDE_ALIDDNS=${{env.aliddns}}" >> .config #阿里DDNS
+        echo "CONFIG_FIRMWARE_INCLUDE_ZEROTIER=${{env.zerotier}}" >> .config #zerotier ~1.3M
         echo "CONFIG_FIRMWARE_INCLUDE_CLOUDFLAREDDNS=y" >> .config #CLOUDFLAREDDNS
         echo "CONFIG_FIRMWARE_INCLUDE_NVPPROXY=n" >> .config #NVPPROXY
-        echo "CONFIG_FIRMWARE_INCLUDE_DDNSTO=n" >> .config #DDNSTO
-        echo "CONFIG_FIRMWARE_INCLUDE_WIREGUARD=y" >> .config #WIREGUARD
+        echo "CONFIG_FIRMWARE_INCLUDE_DDNSTO=${{env.ddnsto}}" >> .config #DDNSTO
+        echo "CONFIG_FIRMWARE_INCLUDE_WIREGUARD=${{env.wireguard}}" >> .config #WIREGUARD
         #
-        echo "CONFIG_FIRMWARE_INCLUDE_ALDRIVER=n" >> .config #阿里云盘
+        echo "CONFIG_FIRMWARE_INCLUDE_ALDRIVER=${{env.aldrive}}" >> .config #阿里云盘
         #
         echo "CONFIG_FIRMWARE_INCLUDE_CADDY=n" >> .config #在线文件管理服务
         echo "CONFIG_FIRMWARE_INCLUDE_CADDYBIN=n" >> .config #集成caddu执行文件，此文件有13M,请注意固件大小。如果不集成，会从网上下载下来执行，不影响正常使用
@@ -174,11 +240,11 @@ jobs:
         echo "CONFIG_FIRMWARE_INCLUDE_WYY=n" >> .config #网易云解锁
         echo "CONFIG_FIRMWARE_INCLUDE_WYYBIN=n" >> .config #网易云解锁GO版本执行文件（4M多）注意固件超大小,不集成会自动下载
         #校园网相关开始
-        echo "CONFIG_FIRMWARE_INCLUDE_MENTOHUST=n" >> .config #MENTOHUST
-        echo "CONFIG_FIRMWARE_INCLUDE_SCUTCLIENT=n" >> .config #SCUTCLIENT
-        echo "CONFIG_FIRMWARE_INCLUDE_NJIT_CLIENT=n" >> .config
-        echo "CONFIG_FIRMWARE_INCLUDE_MINIEAP=n" >> .config
-        echo "CONFIG_FIRMWARE_INCLUDE_DOGCOM=n" >> .config
+        echo "CONFIG_FIRMWARE_INCLUDE_MENTOHUST=${{env.mentohust}}" >> .config #MENTOHUST
+        echo "CONFIG_FIRMWARE_INCLUDE_SCUTCLIENT=${{env.scutclient}}" >> .config #SCUTCLIENT
+        echo "CONFIG_FIRMWARE_INCLUDE_NJIT_CLIENT=${{env.njitclient}}" >> .config
+        echo "CONFIG_FIRMWARE_INCLUDE_MINIEAP=${{env.minieap}}" >> .config
+        echo "CONFIG_FIRMWARE_INCLUDE_DOGCOM=${{env.dogcom}}" >> .config
         echo "CONFIG_FIRMWARE_INCLUDE_NAPT66=n" >> .config
         #校园网相关结束
         #########################################################################################
@@ -193,7 +259,7 @@ jobs:
       run: |
         cd $WORK_PATH/trunk
         sudo ./clear_tree
-        sudo ./build_firmware_modify $TARGET_NAME 0
+        sudo ./build_firmware_modify ${{ github.event.inputs.targetname }} 0
         echo "FIRMWARE_DATEPREFIX=$(date +"%Y%m%d")" >> $GITHUB_ENV
     - name: Organize firmware files
       id: organize
